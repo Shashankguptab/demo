@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Classic Snake Game</title>
+    <style>
+        body {
+            background-color: #181818;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #score {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        canvas {
+            border: 3px solid #4CAF50;
+            background-color: #000000;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [{ x: 10, y: 10 }];
+        let dx = 0;
+        let dy = 0;
+        let foodX = 15;
+        let foodY = 15;
+        let score = 0;
+        let gameStarted = false;
+
+        document.addEventListener("keydown", changeDirection);
+
+        function gameLoop() {
+            if (hasGameEnded()) {
+                alert("Game Over! Final Score: " + score);
+                resetGame();
+                return;
+            }
+
+            clearCanvas();
+            drawFood();
+            moveSnake();
+            drawSnake();
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawSnake() {
+            ctx.fillStyle = "#4CAF50";
+            snake.forEach((part, index) => {
+                // Darker green for the snake head
+                if (index === 0) ctx.fillStyle = "#388E3C";
+                else ctx.fillStyle = "#4CAF50";
+
+                ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
+            });
+        }
+
+        function moveSnake() {
+            // Don't move until player presses an arrow key
+            if (dx === 0 && dy === 0) return;
+
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
+
+            const hasEatenFood = snake[0].x === foodX && snake[0].y === foodY;
+            if (hasEatenFood) {
+                score += 10;
+                scoreElement.innerText = "Score: " + score;
+                generateFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function changeDirection(event) {
+            const LEFT_KEY = 37, UP_KEY = 38, RIGHT_KEY = 39, DOWN_KEY = 40;
+            const keyPressed = event.keyCode;
+
+            const goingUp = dy === -1;
+            const goingDown = dy === 1;
+            const goingRight = dx === 1;
+            const goingLeft = dx === -1;
+
+            if (keyPressed === LEFT_KEY && !goingRight) { dx = -1; dy = 0; }
+            if (keyPressed === UP_KEY && !goingDown) { dx = 0; dy = -1; }
+            if (keyPressed === RIGHT_KEY && !goingLeft) { dx = 1; dy = 0; }
+            if (keyPressed === DOWN_KEY && !goingUp) { dx = 0; dy = 1; }
+        }
+
+        function hasGameEnded() {
+            // Self collision
+            for (let i = 4; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+            }
+            // Wall collision
+            const hitLeftWall = snake[0].x < 0;
+            const hitRightWall = snake[0].x >= tileCount;
+            const hitTopWall = snake[0].y < 0;
+            const hitBottomWall = snake[0].y >= tileCount;
+
+            return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
+        }
+
+        function generateFood() {
+            foodX = Math.floor(Math.random() * tileCount);
+            foodY = Math.floor(Math.random() * tileCount);
+
+            // Ensure food doesn't spawn inside snake body
+            snake.forEach(part => {
+                if (part.x === foodX && part.y === foodY) generateFood();
+            });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = "#FF5722";
+            ctx.fillRect(foodX * gridSize, foodY * gridSize, gridSize - 2, gridSize - 2);
+        }
+
+        function resetGame() {
+            snake = [{ x: 10, y: 10 }];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            scoreElement.innerText = "Score: 0";
+            generateFood();
+        }
+
+        generateFood();
+        setInterval(gameLoop, 100);
+    </script>
+</body>
+
+</html>
